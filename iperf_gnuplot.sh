@@ -2,7 +2,6 @@
 
 if [ -f "$1" ]; then
 	id=
-	
 	while IFS='' read -r _l ; do
 		case $_l in
 		*"] local "*)
@@ -10,8 +9,10 @@ if [ -f "$1" ]; then
 			_b=${_b##* }
 			id=${id:+$id }$_b
 			echo "" > /tmp/thr_$$_$_b
-			continue
 			;;
+		# iperf3 final reports
+		*"sender" | *"receiver") ;;
+		
 		*"] "*)
 			_b=${_l%%]*}
 			_b=${_b##* }
@@ -30,6 +31,7 @@ if [ -f "$1" ]; then
 						_e=${_e%%-*}
 					;;
 					*"bits/sec")
+						[ $_t = "Kbits/sec" ] && _p=$((_p / 1000))
 						_e=${_e:+$_e $_p}
 					;;
 					esac
@@ -37,7 +39,6 @@ if [ -f "$1" ]; then
 				done
 				[ -n "$_e" ] && echo $_e >>/tmp/thr_$$_$_b
 				;;
-			*) continue ;;
 			esac
 		;;
 		esac
@@ -48,7 +49,9 @@ if [ -f "$1" ]; then
 	done
 	
 	[ ${#_c} -gt 0 ] && gnuplot -p -e "set term x11; set xlabel 'Time (s)' ; set ylabel 'Throughput (Mbit/s)'; set grid; plot $_c;"
-	
+	for _f in $id ; do
+		rm -f /tmp/thr_$$_$_f
+	done
 else
 	echo "please specify input file"
 fi
